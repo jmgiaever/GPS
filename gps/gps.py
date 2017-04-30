@@ -2,6 +2,7 @@ try:
     import machine
     import time
     import struct
+    import math
 except:
     pass
 
@@ -77,7 +78,12 @@ class Position(Value):
         '''
         Returns a new position with the subtracted value
         '''
-        return Position(self.value() - other.value())
+        u = self.unit()
+
+        if self.unit() != other.unit():
+            u += "/" + other.unit()
+
+        return Position(self.value() - other.value(), u, self.time())
 
 class Speed(Value):
     '''
@@ -306,37 +312,37 @@ class Location(object):
         '''
         Returns the longitude.
         '''
-        return self.__lat.value() if self.__lat is not None else False
+        return self.__lat if self.__lat is not None else False
 
     def latitude(self):
         '''
         Returns the latitude
         '''
-        return self.__long.value() if self.__long is not None else False
+        return self.__long if self.__long is not None else False
 
     def altitude(self):
         '''
         Returns the altitude
         '''
-        return self.__alt.value() if self.__alt is not None else False
+        return self.__alt if self.__alt is not None else False
 
     def height(self):
         '''
         Returns the height
         '''
-        return self.__height.value() if self.__height is not None else False
+        return self.__height if self.__height is not None else False
 
     def speed(self):
         '''
         Returns the speed
         '''
-        return self.__speed.value() if self.__speed is not None else False
+        return self.__speed if self.__speed is not None else False
 
     def course(self):
         '''
         Returns the course
         '''
-        return self.__course.value() if self.__course is not None else False
+        return self.__course if self.__course is not None else False
 
     def satellites(self):
         '''
@@ -349,6 +355,27 @@ class Location(object):
         Returns the precision
         '''
         return self.__hdop if self.__hdop is not None else False
+
+    def delta(self, other):
+        '''
+        Checks the delta between this location and other location.
+        Returns float with distance in meters
+        '''
+        earth_r = 6371000.0
+
+        # radians
+        lat1r = self.latitude().rad()
+        lat2r = other.latitude().rad()
+
+        # delta-radians
+        latdr = lat2r - lat1r
+        longdr = (other.longitude() - self.longitude()).rad()
+
+        a1 = (math.sin(latdr / 2) * math.sin(latdr / 2))
+        a2 = (math.cos(lat1r) * math.cos(lat2r))
+        a3 = (math.sin(longdr / 2) * math.sin(longdr / 2))
+        a = a1 + a2 * a3
+        return earth_r * (2 * math.atan2(math.sqrt(a), math.sqrt(1-a)))
 
 
 class Data(object):
